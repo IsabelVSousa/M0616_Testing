@@ -10,36 +10,55 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class NurseController extends AbstractController
 {
+    
     #[Route('/nurse/index', name: 'nurse_index', methods: ['GET'])]
-    public function index(): JsonResponse
+    public function index(NurseRepository $nurseRepository): JsonResponse
     {
-        return $this->json($this->loadNurses());
+        $nurses = $nurseRepository->findAll();
+
+        $data = [];
+
+        foreach ($nurses as $nurse) {
+            $data[] = [
+                'id' => $nurse->getId(),
+                'internal_id' => $nurse->getInternalId(),
+                'first_name' => $nurse->getFirstName(),
+                'last_name' => $nurse->getLastName(),
+                'license_number' => $nurse->getLicenseNumber(),
+                'username' => $nurse->getUsername(),
+                'email' => $nurse->getEmail(),
+                'shift' => $nurse->getShift(),
+            ];
+        }
+
+        return $this->json($data);
     }
 
+
     #[Route('/nurse/login', name: 'nurse_login', methods: ['POST'])]
-    public function loginNurses(Request $request): JsonResponse{
-        $data = json_decode($request->getContent(), true);
-        if(!is_array($data) || empty ($data ['user']) || empty ($data ['password'])){
+    public function loginNurses(Request $request, NurseRepository $nurseRepository): JsonResponse{
+                $data = json_decode($request->getContent(), true);
+        if (!is_array($data) || empty($data['user']) || empty($data['password'])) {
             return $this->json([
                 'success' => false,
                 'message' => 'El usuario y la contraseña son obligatorios',
-            ], JsonResponse ::HTTP_BAD_REQUEST);
+            ], JsonResponse::HTTP_BAD_REQUEST);
+        }
+        
+        $nurse = $nurseRepository->findOneBy(['username' => $data['user']]);
 
+
+        if ($nurse === null || $nurse->getPassword() !== $data['password']) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Usuario o contraseña incorrectos',
+            ], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
-        foreach($this->loadNurses() as $nurse){
-            if ($nurse['username'] === $data['user'] && $nurse['password'] === $data['password']){
-                return $this->json([
-                    'success' => true,
-                    'message' => 'Login correcto',
-                ]);
-            }
-
-        }
-        return $this->json([
-            'success' => false,
-            'message' => 'Usuario o contraseña incorrectos',
-        ], JsonResponse::HTTP_UNAUTHORIZED);
+         return $this->json([
+            'success' => true,
+            'message' => 'Login correcto',
+        ]);
 
     }
 
