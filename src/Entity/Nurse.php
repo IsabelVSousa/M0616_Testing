@@ -5,8 +5,14 @@ namespace App\Entity;
 use App\Repository\NurseRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: NurseRepository::class)]
+#[UniqueEntity(fields: ['internal_id'], message: 'This internal_id already exists')]
+#[UniqueEntity(fields: ['username'], message: 'This username already exists')]
+#[UniqueEntity(fields: ['license_number'], message: 'This license_number already exists')]
+#[UniqueEntity(fields: ['email'], message: 'This email already exists')]
 class Nurse
 {
     #[ORM\Id]
@@ -14,28 +20,41 @@ class Nurse
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 25)]
+    #[ORM\Column(length: 25, unique: true)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 25)]
+    #[Assert\Regex('/^ENF-\d{4}$/', message: 'Format must be ENF-0000')]
     private ?string $internal_id = null;
 
     #[ORM\Column(length: 25)]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 25)]
     private ?string $first_name = null;
 
     #[ORM\Column(length: 25, nullable: true)]
+    #[Assert\Length(max: 25)]
     private ?string $last_name = null;
 
-    #[ORM\Column(length: 25)]
+    #[ORM\Column(length: 25, unique: true)]
+    #[Assert\NotBlank]
+    #[Assert\Regex('/^\d{8}$/', message: 'License number must have 8 digits')]
     private ?string $license_number = null;
 
-    #[ORM\Column(length: 25)]
+    #[ORM\Column(length: 25, unique: true)]
+    #[Assert\NotBlank]
+    #[Assert\Length(min: 3, max: 25)]
     private ?string $username = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $password = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
+    #[ORM\Column(length: 50, nullable: true, unique: true)]
+    #[Assert\Email]
+    #[Assert\Length(max: 50)]
     private ?string $email = null;
 
     #[ORM\Column(length: 25, nullable: true)]
+    #[Assert\Choice(choices: ['morning', 'afternoon', 'night'])]
     private ?string $shift = null;
 
     public function getId(): ?int
